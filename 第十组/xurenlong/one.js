@@ -28,21 +28,22 @@ Girl.prototype.removeListener = function (eventName,callback) {
     //数组的filter方法
     if(this._events[eventName]){
         this._events[eventName] = this._events[eventName].filter(function (item) {
-            return item!=callback; //为false则删除，为true则留下
+            return item!=callback && item.g != callback; //为false则删除，为true则留下
         });
     }
 };
 Girl.prototype.once = function (eventName,callback) {
-    this.on(eventName,callback);
-    var args = Array.from(arguments).slice(2);
-    args.unshift(eventName);
-    this.emit.apply(this,args);
-    this.removeListener(eventName,callback);
+    function one() {
+        callback.apply(this,arguments);
+        this.removeListener(eventName,one);
+    }
+    one.g = callback;
+    this.on(eventName,one);
 };
 var girl = new Girl();
 function buyPack(who,other) {console.log(who+'买lv包'+other+this.smile);}
 function buyCar(who,other) {console.log(who+'买bmw'+other);}
-girl.once('有钱',buyPack,'老公','给别人'); //先绑定，绑定后执行，执行后删除这个事件，在次执行则不会被触发
+girl.once('有钱',buyPack); //先绑定，绑定后执行，执行后删除这个事件，在次执行则不会被触发
 girl.on('有钱',buyCar);
 girl.removeListener('有钱',buyCar);//移除方法
 girl.emit('有钱','老公','给别人');//当触发有钱时执行buyPack和buyCar
